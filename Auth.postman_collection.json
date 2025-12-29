@@ -1,0 +1,324 @@
+{
+	"info": {
+		"_postman_id": "477874fb-cea4-4dab-9912-309aa7898962",
+		"name": "Auth",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "27277997",
+		"_collection_link": "https://universal-equinox-241977.postman.co/workspace/Learning-postman-testing~2c482a6d-a991-4ea9-ac9e-3acffbeaffa8/collection/27277997-477874fb-cea4-4dab-9912-309aa7898962?action=share&source=collection_link&creator=27277997"
+	},
+	"item": [
+		{
+			"name": "LoginUsername&password",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.test(\"Check the Method\",()=>\r",
+							"{\r",
+							"pm.expect(pm.request.method).to.includes(\"POST\")\r",
+							"})\r",
+							"pm.test(\"Check the Protocol\",()=>\r",
+							"{\r",
+							"    const protocol=pm.variables.replaceIn(pm.request.url.toString());\r",
+							"    pm.expect(protocol.startsWith(\"https://\")).to.be.true;\r",
+							"})\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Validate the response code\", () => {\r",
+							"    pm.expect(pm.response.code).to.eql(200);\r",
+							"})\r",
+							"pm.test(\"Validate the cookies are set automatically\", () => {\r",
+							"    const cookies = pm.cookies.get(\"accessToken\");\r",
+							"\r",
+							"    pm.expect(cookies).to.exist;\r",
+							"});\r",
+							"pm.test(\"Check the Expiry date\", () => {\r",
+							"    const accessTken = pm.response.headers.all().filter(h => h.key.toLowerCase() === 'set-cookie').map(h => h.value);\r",
+							"\r",
+							"    const accessCookie = accessTken.find(c => c.startsWith('accessToken='));\r",
+							"    const dt = accessCookie.split(\";\").find(p => p.trim().startsWith(\"accessToken=\"));\r",
+							"    const accessTkn = dt.substring(dt.indexOf(\"=\") + 1).trim();\r",
+							"    pm.collectionVariables.set(\"accessToken\", accessTkn)\r",
+							"\r",
+							"\r",
+							"    const refreshCookie = accessTken.find(c => c.startsWith('refreshToken='));\r",
+							"    const dt1 = refreshCookie.split(\";\").find(p => p.trim().startsWith(\"refreshToken=\"));\r",
+							"    const refrehTkn = dt1.substring(dt1.indexOf(\"=\") + 1).trim();\r",
+							"    pm.collectionVariables.set(\"refreshToken\", refrehTkn)\r",
+							"});\r",
+							"pm.test(\"Validate the accesToken is stored\", () => {\r",
+							"    const tken = pm.collectionVariables.get(\"accessToken\");\r",
+							"    const rtken = pm.collectionVariables.get(\"refreshToken\");\r",
+							"\r",
+							"})\r",
+							"\r",
+							"\r",
+							"\r",
+							"\r",
+							"\r",
+							"\r",
+							"\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"username\":\"emilys\",\r\n    \"password\":\"emilyspass\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://dummyjson.com/auth/login",
+					"protocol": "https",
+					"host": [
+						"dummyjson",
+						"com"
+					],
+					"path": [
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Authenticated user",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.test(\"Set the Header and check the respone\", () => {\r",
+							"    const Tken = pm.collectionVariables.get(\"accessToken\");\r",
+							"\r",
+							"    [\r",
+							"        { key: \"Authorization\", value: `Bearer Token@123` },\r",
+							"        { key: \"Accept\", value: \"application/json;charset=utf-8\" }\r",
+							"    ].forEach(h => pm.request.headers.upsert(h));\r",
+							"\r",
+							"\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"\r",
+							"pm.test(\"Check the token invslid/expire\", () => {\r",
+							"    let retry = Number(pm.collectionVariables.get(\"retry\") || 0);\r",
+							"        const maxretry = Number(pm.collectionVariables.get(\"MAX_RETRY\") || 3);\r",
+							"\r",
+							"\r",
+							"    if (pm.response.code === 401 && retry<maxretry) {\r",
+							"        pm.collectionVariables.set(\"tokenExpired\", \"true\");\r",
+							"        pm.collectionVariables.set(\"failedRequest\", pm.info.requestName);\r",
+							"    \r",
+							"        retry++;\r",
+							"        pm.collectionVariables.set(\"retry\", retry);\r",
+							"\r",
+							"\r",
+							"    } else {\r",
+							"        pm.collectionVariables.unset(\"tokenExpired\");\r",
+							"        pm.collectionVariables.unset(\"failedRequest\");\r",
+							"        pm.collectionVariables.unset(\"retry\");\r",
+							"        pm.execution.setNextRequest(null);\r",
+							"        throw new Error(\r",
+							"            \"Maximum Retries reached\"\r",
+							")\r",
+							"\r",
+							"    }\r",
+							"\r",
+							"    if (pm.response.code === 200) {\r",
+							"        pm.expect(pm.response.code).to.eql(200);\r",
+							"    }\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://dummyjson.com/user/me",
+					"protocol": "https",
+					"host": [
+						"dummyjson",
+						"com"
+					],
+					"path": [
+						"user",
+						"me"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Refresh Token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Checking headers and renewing Tokens\",()=>\r",
+							"{\r",
+							"    \r",
+							"   const accessTken=pm.response.headers.all().filter(h=>h.key.toLowerCase()==='set-cookie').map(h=>h.value);\r",
+							"\r",
+							"    const accessCookie=accessTken.find(c=>c.startsWith('accessToken='));\r",
+							"    const dt=accessCookie.split(\";\").find(p=>p.trim().startsWith(\"accessToken=\"));\r",
+							"    const accessTkn=dt.substring(dt.indexOf(\"=\")+1).trim();\r",
+							"    pm.collectionVariables.set(\"accessToken\",accessTkn)\r",
+							"\r",
+							"    const refreshCookie=accessTken.find(c=>c.startsWith('refreshToken='));\r",
+							"    const dt1=refreshCookie.split(\";\").find(p=>p.trim().startsWith(\"refreshToken=\"));\r",
+							"    const refrehTkn=dt1.substring(dt1.indexOf(\"=\")+1).trim();\r",
+							"    pm.collectionVariables.set(\"refreshToken\",refrehTkn);\r",
+							"\r",
+							"    \r",
+							"\r",
+							"    pm.collectionVariables.unset(\"tokenExpired\")\r",
+							"\r",
+							"    pm.execution.setNextRequest(pm.collectionVariables.get(\"failedRequest\"))\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"refreshToken\":\"{{refreshToken}}\",\r\n    \"accessToken\":\"{{accessToken}}\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://dummyjson.com/auth/refresh",
+					"protocol": "https",
+					"host": [
+						"dummyjson",
+						"com"
+					],
+					"path": [
+						"auth",
+						"refresh"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "bearer"
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					"pm.test(\"Check Token Expire\", () => {\r",
+					"    const tkenexpiry = pm.collectionVariables.get(\"tokenExpired\");\r",
+					"    const maxretry = pm.collectionVariables.get(\"MAX_RETRY\");\r",
+					"    const retry = pm.collectionVariables.get(\"retry\");\r",
+					"\r",
+					"\r",
+					"    if (!maxretry) {\r",
+					"\r",
+					"        pm.collectionVariables.set(\"MAX_RETRY\", 3);\r",
+					"    }\r",
+					"    if (tkenexpiry && retry < maxretry) {\r",
+					"        \r",
+					"        pm.execution.setNextRequest(\"Refresh Token\");\r",
+					"\r",
+					"\r",
+					"    } else if(tkenexpiry && retry>=maxretry)\r",
+					"    {\r",
+					"        pm.execution.setNextRequest(null)\r",
+					"    }\r",
+					"    if (!retry && retry !== 0) {\r",
+					"        console.log(\"Retry Variable Set\")\r",
+					"        pm.collectionVariables.set(\"retry\", 0)\r",
+					"    }\r",
+					"\r",
+					"\r",
+					"})\r",
+					"\r",
+					"\r",
+					"\r",
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "MAX_RETRY",
+			"value": ""
+		}
+	]
+}

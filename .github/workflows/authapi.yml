@@ -1,0 +1,19 @@
+name: Run Auth Api Testing Retry
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  auth-api-testing:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Docker Build
+        run: docker build -t my-auth-api-img-01:v1 .
+
+      - name: Docker run
+        run: docker run my-auth-api-img-01:v1
