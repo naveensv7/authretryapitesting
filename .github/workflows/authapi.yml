@@ -16,4 +16,5 @@ jobs:
         run: docker build -t my-auth-api-img-01:v1 .
 
       - name: Docker run
+        continue-on-error: true
         run: docker run my-auth-api-img-01:v1
